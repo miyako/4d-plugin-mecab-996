@@ -75,6 +75,11 @@ void MeCab_GET_KEYWORDS(sLONG_PTR *pResult, PackagePtr pParams)
 		
 		IMecabModel::LatticeRef lattice = model->CreateLattice();
 		
+
+		printf("model: %s\n", model->GetVersion());
+		printf("signature: %s\n", model->GetSignature());
+
+		
 		size_t *words;
 		size_t count;
 		

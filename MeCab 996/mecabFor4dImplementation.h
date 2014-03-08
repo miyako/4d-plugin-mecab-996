@@ -33,8 +33,17 @@ typedef unsigned char uint8_t;
 #include "Mecab4DInterface.h"
 #include "mecab.h"
 
+#include <string>
+#include <map>
+#include <iostream>
+#include <sstream> 
+
 class VMecabModel : public IMecabModel
-{	
+{
+private: 	
+	
+	std::string		fMecabSignature;
+	
 public:
 	
 	//used internally to process keywords (ignore, concatenate...)
@@ -60,8 +69,13 @@ public:
 	
 	void			ReleaseWordBoundaries( size_t *inWords);
 	
+	void			Init();
+	
     MeCab::Model*   fMeCabModel;
     MeCab::Tagger*  fMeCabTagger;
+	
+	const char *	GetSignature(){return this->fMecabSignature.c_str();};
+	const char *	GetVersion(){return this->fMeCabModel->version();};
 	
 };
 

@@ -15,8 +15,6 @@
  */
 #include "mecabFor4dImplementation.h"
 
-#include <string>
-
 void VMecabModel::Release(){
 	
 	if(fMeCabModel){
@@ -34,6 +32,35 @@ void VMecabModel::Release(){
 	
 }
 
+void VMecabModel::Init(){
+
+	if(fMeCabTagger){
+		
+		const MeCab::DictionaryInfo *d = fMeCabTagger->dictionary_info();
+		
+		std::map< std::string , unsigned short > map;	// sorted list of dics with their versions	
+		for (; d; d = d->next){
+			
+			std::string filename( d->filename);
+#ifdef _WIN32			
+			size_t found = filename.find_last_of("/\\");
+#else
+			size_t found = filename.find_last_of("/");			
+#endif			
+			if(found != std::string::npos)
+				filename = filename.substr(found + 1); 
+			
+			map.insert(std::map< std::string , unsigned short >::value_type( filename, d->version));
+		}
+		std::ostringstream s;
+		for(std::map< std::string , unsigned short >::iterator i = map.begin() ; i != map.end() ; ++i)
+			s << i->first << ":" <<  i->second << ";";
+		
+		fMecabSignature = s.str();
+		
+	}
+	
+}	
 
 BOOL GetMeCabResourcePath(std::string &rcfile){
 	
@@ -151,6 +178,8 @@ IMecabModel* CreateMecabModelWithUserDictionary(const uint8_t *inPathUTF8, size_
 		
 		model->fMeCabTagger = model->fMeCabModel->createTagger();
 		
+		model->Init();
+		
 	}	
 	
 	return model;	
@@ -172,6 +201,8 @@ IMecabModel* CreateMecabModel(){
 	if(model->fMeCabModel){
 		
 		model->fMeCabTagger = model->fMeCabModel->createTagger();
+		
+		model->Init();
 		
 	}
 	
@@ -353,17 +384,20 @@ VMecabModel::keywordActionType VMecabModel::keywordActionTypeForPosIdPair(unsign
 	   || (currentPosId == 27)	//tokushu,	ku-haku
 	   || (currentPosId == 28)	//tokushu,	tou-ten  
 	   || (currentPosId == 29)	//hanteishi	   
+	   || (currentPosId == 12)	//settouji,	na-keiyoushi settouji	 
 	   )	
 	{
 		return KEYWORD_NO_ACTION;
 	}	
+	
+	//suffix particles
 	
 	if(
 	   (currentPosId ==  15)	//setsubiji,	keiyoushi-sei-jyutsugo
 	   || (currentPosId ==  16)	//setsubiji,	keiyoushi-sei-meishi
 	   || (currentPosId ==  17)	//setsubiji,	doushi-sei
 	   //	   || (currentPosId ==  18)	//setsubiji,	meishi-sei-jyutsugo
-	   //	   || (currentPosId ==  19)	//setsubiji,	meishi-sei-tokushu
+	   	   || (currentPosId ==  19)	//setsubiji,	meishi-sei-tokushu
 	   //	   || (currentPosId ==  20)	//setsubiji,	meishi-sei-meishi-jyosuu
 	   //	   || (currentPosId ==  21)	//setsubiji,	meishi-sei   
 	   )	
@@ -390,7 +424,29 @@ VMecabModel::keywordActionType VMecabModel::keywordActionTypeForPosIdPair(unsign
 			return KEYWORD_REPLACE;
 		}
 		
-	}	
+	}
+	
+	//prefix particles
+	
+	if(
+	   (currentPosId ==  31)	//meishi,	sa-hen meishi
+	   || (currentPosId ==  32)	//meishi,	keishiki meishi
+	   || (currentPosId ==  33)	//meishi,	koyuu meishi
+	   || (currentPosId ==  34)	//meishi,	jisou meishi
+	   || (currentPosId ==  39)	//meishi,	futsuu meishi
+	   || (currentPosId ==  40)	//meishi,	fukushiteki meishi
+	   )	
+	{
+		if(
+		   (previousPosId ==  14)		//settouji,	meishi-settouji
+		   || (previousPosId ==  12)	//settouji,	na-keiyoushi settouji	
+		   ){
+			return KEYWORD_REPLACE;
+		}else{
+			return KEYWORD_ADD;
+		}
+		
+	}
 	
 	return KEYWORD_ADD;
 	

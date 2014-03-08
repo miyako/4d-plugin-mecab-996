@@ -48,6 +48,11 @@ public:
 	// on windows we need to release the object in the same dll that created it
 	virtual void			ReleaseWordBoundaries( size_t *inWords) = 0;
 	
+	// returns the mecab library version, ex. 0.996
+	virtual const char*		GetVersion() = 0;
+	
+	// returns a signature indicating the dictionary file name and version
+	virtual const char*		GetSignature() = 0;
 };
 
 typedef IMecabModel* (*CreateMecabModelProc)();
